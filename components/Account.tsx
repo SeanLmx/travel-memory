@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { StyleSheet, View, Alert } from 'react-native'
 import { Button, Input } from '@rneui/themed'
 import { Session } from '@supabase/supabase-js'
+import Avatar from './Avatar'
 
 // Define the Account component
 export default function Account({ session }: { session: Session }) {
@@ -11,7 +12,7 @@ export default function Account({ session }: { session: Session }) {
     const [loading, setLoading] = useState(true)
     const [username, setUsername] = useState('')
     const [website, setWebsite] = useState('')
-    const [avatar_url, setAvatarUrl] = useState('')
+    const [avatarUrl, setAvatarUrl] = useState('')
 
     // Effect hook to fetch user profile when session changes
     useEffect(() => {
@@ -30,7 +31,7 @@ export default function Account({ session }: { session: Session }) {
                 .select(`username, website, avatar_url`)
                 .eq('id', session?.user.id)
                 .single()
-            
+
             if (error && status !== 406) throw error
 
             // Update state with fetched profile data
@@ -77,29 +78,40 @@ export default function Account({ session }: { session: Session }) {
 
     // Render the component
     return (
-        <View style={styles.container}>
-            {/* Email input field (non-editable) */}
-            <View style={[styles.verticallySpaced, styles.mt20]}>
-                <Input label="Email" value={session?.user?.email}/>
-            </View>
-            {/* Username input field */}
-            <View style={styles.verticallySpaced}>
-                <Input label="Username" value={username || ''} onChangeText={(text) => setUsername(text)}/>
-            </View>
-            {/* Website input field */}
-            <View style={styles.verticallySpaced}>
-                <Input label="Website" value={website || ''} onChangeText={(text) => setWebsite(text)}/>
-            </View>
+        <View>
+          <View>
+            <Avatar
+              size={200}
+              url={avatarUrl}
+              onUpload={(url: string) => {
+                setAvatarUrl(url)
+                updateProfile({ username, website, avatar_url: url })
+              }}
+            />
+          </View>
 
-            {/* Update profile button */}
-            <View style={[styles.verticallySpaced, styles.mt20]}>
-                <Button title={loading ? 'Loading...' : 'Update'} onPress={() => updateProfile({ username, website, avatar_url })} disabled={loading}/>
-            </View>
+          <View style={[styles.verticallySpaced, styles.mt20]}>
+            <Input label="Email" value={session?.user?.email} disabled />
+          </View>
+          <View style={styles.verticallySpaced}>
+            <Input label="Username" value={username || ''} onChangeText={(text) => setUsername(text)} />
+          </View>
+          <View style={styles.verticallySpaced}>
+            <Input label="Website" value={website || ''} onChangeText={(text) => setWebsite(text)} />
+          </View>
+    
+          <View style={[styles.verticallySpaced, styles.mt20]}>
+            <Button
+              title={loading ? 'Loading ...' : 'Update'}
+              onPress={() => updateProfile({ username, website, avatar_url: avatarUrl })}
+              disabled={loading}
+            />
+          </View>
+    
+          <View style={styles.verticallySpaced}>
+            <Button title="Sign Out" onPress={() => supabase.auth.signOut()} />
+          </View>
 
-            {/* Sign out button */}
-            <View style={styles.verticallySpaced}>
-                <Button title="Sign Out" onPress={() => supabase.auth.signOut()}/>
-            </View>
         </View>
     )
 }
@@ -107,15 +119,15 @@ export default function Account({ session }: { session: Session }) {
 // Styles for the component
 const styles = StyleSheet.create({
     container: {
-      marginTop: 40,
-      padding: 12,
+        marginTop: 40,
+        padding: 12,
     },
     verticallySpaced: {
-      paddingTop: 4,
-      paddingBottom: 4,
-      alignSelf: 'stretch',
+        paddingTop: 4,
+        paddingBottom: 4,
+        alignSelf: 'stretch',
     },
     mt20: {
-      marginTop: 20,
+        marginTop: 20,
     },
 })
